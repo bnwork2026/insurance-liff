@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>บริการลูกค้าประกันภัย</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; font-family: 'Sukhumvit Set', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f4f6f9; margin: 0; padding: 15px; }
+    .container { max-width: 480px; margin: 0 auto; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 20px; }
+    .tab-btn { flex: 1; padding: 10px; text-align: center; border: none; background: none; font-weight: bold; color: #888; cursor: pointer; }
+    .tab-btn.active { color: #06C755; border-bottom: 3px solid #06C755; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    label { font-size: 14px; font-weight: bold; color: #333; display: block; margin-top: 10px; }
+    input { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; }
+    button.btn-primary { width: 100%; padding: 14px; background-color: #06C755; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+    button:disabled { background-color: #ccc; }
+    .policy-card { background: #f8f9fa; border-left: 4px solid #06C755; padding: 12px; border-radius: 6px; margin-bottom: 12px; }
+    .policy-card h4 { margin: 0 0 5px 0; color: #333; }
+    .policy-card p { margin: 3px 0; font-size: 13px; color: #666; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white; background-color: #06C755; }
+    .badge.pending { background-color: #ff9800; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Tabs Navigation -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('register')">ลงทะเบียน</button>
+    <button class="tab-btn" onclick="switchTab('policies')">เช็คกรมธรรม์</button>
+  </div>
+
+  <!-- Tab 1: ฟอร์มลงทะเบียน -->
+  <div id="tab-register" class="tab-content active">
+    <h3>ลงทะเบียนข้อมูลลูกค้า</h3>
+    <form id="regForm">
+      <label>ชื่อ-นามสกุล</label>
+      <input type="text" id="fullName" required placeholder="นาย สมชาย ใจดี">
+      
+      <label>เบอร์โทรศัพท์</label>
+      <input type="tel" id="phone" required placeholder="0812345678">
+      
+      <button type="submit" id="btnSubmit" class="btn-primary">บันทึกข้อมูล</button>
+    </form>
+  </div>
+
+  <!-- Tab 2: รายการกรมธรรม์ -->
+  <div id="tab-policies" class="tab-content">
+    <h3>กรมธรรม์ของฉัน</h3>
+    <div id="policyList">กำลังโหลดข้อมูล...</div>
+  </div>
+</div>
+
+<script>
+  // ==========================================
+  // ตั้งค่า LIFF ID และ Web App URL จาก Phase 2
+  // ==========================================
+  const MY_LIFF_ID = "YOUR_LIFF_ID_HERE"; 
+  const GAS_WEB_APP_URL = "YOUR_GAS_WEB_APP_URL_HERE";
+
+  let userLineProfile = null;
+
+  async function initLiff() {
+    try {
+      await liff.init({ liffId: MY_LIFF_ID });
+      if (liff.isLoggedIn()) {
+        userLineProfile = await liff.getProfile();
+      } else {
+        liff.login();
+      }
+    } catch (err) {
+      console.error("LIFF Init Error:", err);
+    }
+  }
+  initLiff();
+
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+    if (tabName === 'register') {
+      document.querySelectorAll('.tab-btn')[0].classList.add('active');
+      document.getElementById('tab-register').classList.add('active');
+    } else {
+      document.querySelectorAll('.tab-btn')[1].classList.add('active');
+      document.getElementById('tab-policies').classList.add('active');
+      loadMyPolicies();
+    }
+  }
+
+  // ส่งข้อมูลลงทะเบียนเข้า Google Sheets ผ่าน Apps Script
+  document.getElementById('regForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!userLineProfile) return alert("ไม่สามารถดึงข้อมูล LINE Profile ได้");
+
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.innerText = "กำลังบันทึก...";
+
+    const payload = {
+      action: "register_customer",
+      fullName: document.getElementById('fullName').value,
+      phone: document.getElementById('phone').value,
+      lineUserId: userLineProfile.userId
+    };
+
+    try {
+      const res = await fetch(GAS_WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.status === "success") {
+        alert("ลงทะเบียนสำเร็จเรียบร้อยครับ!");
+        liff.closeWindow();
+      } else {
+        alert("เกิดข้อผิดพลาด: " + data.message);
+      }
+    } catch (err) {
+      alert("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      btn.disabled = false;
+      btn.innerText = "บันทึกข้อมูล";
+    }
+  });
+
+  // ดึงข้อมูลกรมธรรม์มาแสดงใน Tab 2
+  async function loadMyPolicies() {
+    const container = document.getElementById('policyList');
+    if (!userLineProfile) {
+      container.innerHTML = "ไม่พบข้อมูลโปรไฟล์ LINE";
+      return;
+    }
+
+    container.innerHTML = "กำลังดึงข้อมูลกรมธรรม์...";
+
+    try {
+      const res = await fetch(GAS_WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "get_my_policies",
+          lineUserId: userLineProfile.userId
+        })
+      });
+      const data = await res.json();
+
+      if (data.status === "success" && data.policies.length > 0) {
+        container.innerHTML = data.policies.map(p => `
+          <div class="policy-card">
+            <h4>${p.carBrand} (${p.carReg})</h4>
+            <p><strong>บริษัท:</strong> ${p.insuranceComp}</p>
+            <p><strong>ประเภท:</strong> ${p.coverageType}</p>
+            <p><strong>วันหมดอายุ:</strong> ${new Date(p.expiryDate).toLocaleDateString('th-TH')}</p>
+            <span class="badge ${p.status === 'Pending_Renewal' ? 'pending' : ''}">
+              ${p.status === 'Pending_Renewal' ? 'รอต่ออายุ' : 'คุ้มครองอยู่'}
+            </span>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = "<p style='text-align:center; color:#888;'>ไม่พบข้อมูลกรมธรรม์ของคุณในระบบ</p>";
+      }
+    } catch (err) {
+      container.innerHTML = "เกิดข้อผิดพลาดในการดึงข้อมูล";
+    }
+  }
+</script>
+
+</body>
+</html>
