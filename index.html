@@ -8,36 +8,44 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     * { box-sizing: border-box; font-family: 'Sukhumvit Set', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #f4f6f9; margin: 0; padding: 15px; }
-    .container { max-width: 480px; margin: 0 auto; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-    .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 20px; }
-    .tab-btn { flex: 1; padding: 10px; text-align: center; border: none; background: none; font-weight: bold; color: #888; cursor: pointer; }
+    body { background-color: #f4f6f9; margin: 0; padding: 10px; }
+    .container { max-width: 480px; margin: 0 auto; background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    
+    /* แท็บเมนูแบบ Scrollable สำหรับ 4 แท็บ */
+    .tabs-nav { display: flex; overflow-x: auto; border-bottom: 2px solid #eee; margin-bottom: 15px; scrollbar-width: none; }
+    .tabs-nav::-webkit-scrollbar { display: none; }
+    .tab-btn { flex: 0 0 auto; padding: 10px 14px; text-align: center; border: none; background: none; font-weight: bold; font-size: 14px; color: #888; cursor: pointer; white-space: nowrap; }
     .tab-btn.active { color: #06C755; border-bottom: 3px solid #06C755; }
+    
     .tab-content { display: none; }
     .tab-content.active { display: block; }
-    label { font-size: 14px; font-weight: bold; color: #333; display: block; margin-top: 10px; }
-    input { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; }
-    button.btn-primary { width: 100%; padding: 14px; background-color: #06C755; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+    
+    label { font-size: 13px; font-weight: bold; color: #333; display: block; margin-top: 10px; }
+    input, select, textarea { width: 100%; padding: 10px; margin-top: 4px; border-radius: 8px; border: 1px solid #ddd; font-size: 15px; }
+    button.btn-primary { width: 100%; padding: 12px; background-color: #06C755; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     button:disabled { background-color: #ccc; }
-    .policy-card { background: #f8f9fa; border-left: 4px solid #06C755; padding: 12px; border-radius: 6px; margin-bottom: 12px; }
-    .policy-card h4 { margin: 0 0 5px 0; color: #333; }
-    .policy-card p { margin: 3px 0; font-size: 13px; color: #666; }
-    .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white; background-color: #06C755; }
+    
+    .card { background: #f8f9fa; border-left: 4px solid #06C755; padding: 10px 12px; border-radius: 6px; margin-bottom: 10px; }
+    .card h4 { margin: 0 0 4px 0; color: #333; font-size: 15px; }
+    .card p { margin: 2px 0; font-size: 13px; color: #666; }
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: bold; color: white; background-color: #06C755; }
     .badge.pending { background-color: #ff9800; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <!-- Tabs Navigation -->
-  <div class="tabs">
+  <!-- แถบเมนู 4 แท็บ -->
+  <div class="tabs-nav">
     <button class="tab-btn active" onclick="switchTab('register')">ลงทะเบียน</button>
-    <button class="tab-btn" onclick="switchTab('policies')">เช็คกรมธรรม์</button>
+    <button class="tab-btn" onclick="switchTab('my-cars')">รถของฉัน</button>
+    <button class="tab-btn" onclick="switchTab('check-premium')">เช็คเบี้ยประกัน</button>
+    <button class="tab-btn" onclick="switchTab('my-policies')">กรมธรรม์ของฉัน</button>
   </div>
 
-  <!-- Tab 1: ฟอร์มลงทะเบียน -->
+  <!-- Tab 1: ลงทะเบียน -->
   <div id="tab-register" class="tab-content active">
-    <h3>ลงทะเบียนข้อมูลลูกค้า</h3>
+    <h3 style="margin-top:0;">ลงทะเบียนข้อมูลลูกค้า</h3>
     <form id="regForm">
       <label>ชื่อ-นามสกุล</label>
       <input type="text" id="fullName" required placeholder="นาย สมชาย ใจดี">
@@ -45,21 +53,60 @@
       <label>เบอร์โทรศัพท์</label>
       <input type="tel" id="phone" required placeholder="0812345678">
       
-      <button type="submit" id="btnSubmit" class="btn-primary">บันทึกข้อมูล</button>
+      <button type="submit" id="btnRegSubmit" class="btn-primary">บันทึกข้อมูล</button>
     </form>
   </div>
 
-  <!-- Tab 2: รายการกรมธรรม์ -->
-  <div id="tab-policies" class="tab-content">
-    <h3>กรมธรรม์ของฉัน</h3>
-    <div id="policyList">กำลังโหลดข้อมูล...</div>
+  <!-- Tab 2: รถของฉัน -->
+  <div id="tab-my-cars" class="tab-content">
+    <h3 style="margin-top:0;">ข้อมูลรถยนต์ของฉัน</h3>
+    <form id="carForm" style="margin-bottom: 20px; background: #fff; padding: 10px; border: 1px solid #eee; border-radius: 8px;">
+      <strong style="font-size:14px;">+ เพิ่มข้อมูลรถใหม่</strong>
+      <label>ทะเบียนรถ</label>
+      <input type="text" id="carReg" required placeholder="กข 1234 กทม">
+      
+      <label>ยี่ห้อ / รุ่นรถ</label>
+      <input type="text" id="carBrand" required placeholder="Toyota Camry 2022">
+      
+      <button type="submit" id="btnCarSubmit" class="btn-primary">เพิ่มข้อมูลรถ</button>
+    </form>
+    
+    <div id="carList">กำลังโหลดข้อมูลรถ...</div>
+  </div>
+
+  <!-- Tab 3: เช็คเบี้ยประกัน -->
+  <div id="tab-check-premium" class="tab-content">
+    <h3 style="margin-top:0;">ขอเสนอราคาเบี้ยประกันภัย</h3>
+    <form id="quoteForm">
+      <label>เลือกรถยนต์</label>
+      <select id="quoteCarSelect" required>
+        <option value="">-- เลือกรถยนต์ --</option>
+      </select>
+
+      <label>ประเภทประกันที่สนใจ</label>
+      <select id="coverageType" required>
+        <option value="ชั้น 1">ประกันภัยชั้น 1</option>
+        <option value="ชั้น 2+">ประกันภัยชั้น 2+</option>
+        <option value="ชั้น 3+">ประกันภัยชั้น 3+</option>
+        <option value="ชั้น 3">ประกันภัยชั้น 3</option>
+        <option value="พ.ร.บ.">พ.ร.บ.</option>
+      </select>
+
+      <label>หมายเหตุ / ความต้องการเพิ่มเติม</label>
+      <textarea id="quoteNote" rows="3" placeholder="ระบุทุนประกัน หรือระบุบริษัทประกันที่ต้องการ..."></textarea>
+
+      <button type="submit" id="btnQuoteSubmit" class="btn-primary">ส่งขอใบเสนอราคา</button>
+    </form>
+  </div>
+
+  <!-- Tab 4: กรมธรรม์ของฉัน -->
+  <div id="tab-my-policies" class="tab-content">
+    <h3 style="margin-top:0;">กรมธรรม์ของฉัน</h3>
+    <div id="policyList">กำลังโหลดข้อมูลกรมธรรม์...</div>
   </div>
 </div>
 
 <script>
-  // ==========================================
-  // ใส่ค่าของคุณที่นี่
-  // ==========================================
   const MY_LIFF_ID = "2011844549-QIzrl5qn"; 
   const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby0PeqWF7IcoFV8kUr0x-X1g21lEKKV870Sg4_JTR1n4huoXRhpTVgFhHWP9P0AasKq/exec";
 
@@ -83,33 +130,26 @@
     initLiff();
   };
 
+  // ฟังก์ชันสลับแท็บ
   function switchTab(tabName) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
-    if (tabName === 'register') {
-      document.querySelectorAll('.tab-btn')[0].classList.add('active');
-      document.getElementById('tab-register').classList.add('active');
-    } else {
-      document.querySelectorAll('.tab-btn')[1].classList.add('active');
-      document.getElementById('tab-policies').classList.add('active');
-      loadMyPolicies();
-    }
+    const btnIndex = { 'register': 0, 'my-cars': 1, 'check-premium': 2, 'my-policies': 3 }[tabName];
+    document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
+    document.getElementById('tab-' + tabName).classList.add('active');
+
+    if (tabName === 'my-cars') loadMyCars();
+    if (tabName === 'check-premium') loadCarsForSelect();
+    if (tabName === 'my-policies') loadMyPolicies();
   }
 
+  // ส่งข้อมูลลงทะเบียน
   document.getElementById('regForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!await checkProfile()) return;
 
-    if (!userLineProfile) {
-      if (liff.isLoggedIn()) {
-        userLineProfile = await liff.getProfile();
-      } else {
-        liff.login();
-        return;
-      }
-    }
-
-    const btn = document.getElementById('btnSubmit');
+    const btn = document.getElementById('btnRegSubmit');
     btn.disabled = true;
     btn.innerText = "กำลังบันทึก...";
 
@@ -120,62 +160,159 @@
       lineUserId: userLineProfile.userId
     };
 
-    try {
-      const res = await fetch(GAS_WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (data.status === "success") {
-        alert("ลงทะเบียนสำเร็จเรียบร้อยครับ!");
-        liff.closeWindow();
-      } else {
-        alert("เกิดข้อผิดพลาด: " + data.message);
-      }
-    } catch (err) {
-      alert("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
-    } finally {
-      btn.disabled = false;
-      btn.innerText = "บันทึกข้อมูล";
-    }
+    await sendData(payload, "ลงทะเบียนสำเร็จเรียบร้อยครับ!");
+    btn.disabled = false;
+    btn.innerText = "บันทึกข้อมูล";
   });
 
-  async function loadMyPolicies() {
-    const container = document.getElementById('policyList');
-    if (!userLineProfile) {
-      container.innerHTML = "ไม่พบข้อมูลโปรไฟล์ LINE";
-      return;
-    }
+  // เพิ่มข้อมูลรถ
+  document.getElementById('carForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!await checkProfile()) return;
 
-    container.innerHTML = "กำลังดึงข้อมูลกรมธรรม์...";
+    const btn = document.getElementById('btnCarSubmit');
+    btn.disabled = true;
+
+    const payload = {
+      action: "add_car",
+      carReg: document.getElementById('carReg').value,
+      carBrand: document.getElementById('carBrand').value,
+      lineUserId: userLineProfile.userId
+    };
+
+    await sendData(payload, "เพิ่มข้อมูลรถสำเร็จเรียบร้อยครับ!");
+    btn.disabled = false;
+    document.getElementById('carForm').reset();
+    loadMyCars();
+  });
+
+  // ส่งขอใบเสนอราคา
+  document.getElementById('quoteForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!await checkProfile()) return;
+
+    const btn = document.getElementById('btnQuoteSubmit');
+    btn.disabled = true;
+
+    const payload = {
+      action: "request_quote",
+      carInfo: document.getElementById('quoteCarSelect').value,
+      coverageType: document.getElementById('coverageType').value,
+      note: document.getElementById('quoteNote').value,
+      lineUserId: userLineProfile.userId
+    };
+
+    await sendData(payload, "ส่งคำขอเสนอราคาเรียบร้อย! เจ้าหน้าที่จะติดต่อกลับครับ");
+    btn.disabled = false;
+  });
+
+  // ดึงรายการรถ
+  async function loadMyCars() {
+    const container = document.getElementById('carList');
+    if (!userLineProfile) return;
+    container.innerHTML = "กำลังโหลดข้อมูล...";
 
     try {
       const res = await fetch(GAS_WEB_APP_URL, {
         method: "POST",
-        body: JSON.stringify({
-          action: "get_my_policies",
-          lineUserId: userLineProfile.userId
-        })
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "get_my_cars", lineUserId: userLineProfile.userId })
+      });
+      const data = await res.json();
+      if (data.status === "success" && data.cars.length > 0) {
+        container.innerHTML = data.cars.map(c => `
+          <div class="card">
+            <h4>${c.carBrand}</h4>
+            <p><strong>ทะเบียน:</strong> ${c.carReg}</p>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = "<p style='text-align:center; color:#888;'>ยังไม่มีข้อมูลรถยนต์</p>";
+      }
+    } catch (err) {
+      container.innerHTML = "เกิดข้อผิดพลาดในการดึงข้อมูล";
+    }
+  }
+
+  // โหลดรายการรถใส่ Dropdown หน้าขอเสนอราคา
+  async function loadCarsForSelect() {
+    const select = document.getElementById('quoteCarSelect');
+    if (!userLineProfile) return;
+
+    try {
+      const res = await fetch(GAS_WEB_APP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "get_my_cars", lineUserId: userLineProfile.userId })
+      });
+      const data = await res.json();
+      if (data.status === "success" && data.cars.length > 0) {
+        select.innerHTML = '<option value="">-- เลือกรถยนต์ --</option>' + 
+          data.cars.map(c => `<option value="${c.carBrand} (${c.carReg})">${c.carBrand} (${c.carReg})</option>`).join('');
+      } else {
+        select.innerHTML = '<option value="">-- โปรดเพิ่มข้อมูลรถในแท็บ "รถของฉัน" ก่อน --</option>';
+      }
+    } catch (err) { console.error(err); }
+  }
+
+  // ดึงรายการกรมธรรม์
+  async function loadMyPolicies() {
+    const container = document.getElementById('policyList');
+    if (!userLineProfile) return;
+    container.innerHTML = "กำลังโหลดข้อมูล...";
+
+    try {
+      const res = await fetch(GAS_WEB_APP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "get_my_policies", lineUserId: userLineProfile.userId })
       });
       const data = await res.json();
 
       if (data.status === "success" && data.policies.length > 0) {
         container.innerHTML = data.policies.map(p => `
-          <div class="policy-card">
+          <div class="card">
             <h4>${p.carBrand} (${p.carReg})</h4>
             <p><strong>บริษัท:</strong> ${p.insuranceComp}</p>
             <p><strong>ประเภท:</strong> ${p.coverageType}</p>
-            <p><strong>วันหมดอายุ:</strong> ${new Date(p.expiryDate).toLocaleDateString('th-TH')}</p>
+            <p><strong>หมดอายุ:</strong> ${p.expiryDate}</p>
             <span class="badge ${p.status === 'Pending_Renewal' ? 'pending' : ''}">
               ${p.status === 'Pending_Renewal' ? 'รอต่ออายุ' : 'คุ้มครองอยู่'}
             </span>
           </div>
         `).join('');
       } else {
-        container.innerHTML = "<p style='text-align:center; color:#888;'>ไม่พบข้อมูลกรมธรรม์ของคุณในระบบ</p>";
+        container.innerHTML = "<p style='text-align:center; color:#888;'>ไม่พบข้อมูลกรมธรรม์ของคุณ</p>";
       }
     } catch (err) {
       container.innerHTML = "เกิดข้อผิดพลาดในการดึงข้อมูล";
+    }
+  }
+
+  // ฟังก์ชันช่วยเหลือ
+  async function checkProfile() {
+    if (!userLineProfile) {
+      if (liff.isLoggedIn()) userLineProfile = await liff.getProfile();
+      else { liff.login(); return false; }
+    }
+    return true;
+  }
+
+  async function sendData(payload, successMsg) {
+    try {
+      const res = await fetch(GAS_WEB_APP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.status === "success") {
+        alert(successMsg);
+      } else {
+        alert("ข้อผิดพลาด: " + data.message);
+      }
+    } catch (err) {
+      alert("ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
     }
   }
 </script>
