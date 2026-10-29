@@ -11,10 +11,9 @@
     body { background-color: #f4f6f9; margin: 0; padding: 10px; }
     .container { max-width: 480px; margin: 0 auto; background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     
-    /* แท็บเมนูแบบ Scrollable สำหรับ 4 แท็บ */
-    .tabs-nav { display: flex; overflow-x: auto; border-bottom: 2px solid #eee; margin-bottom: 15px; scrollbar-width: none; }
-    .tabs-nav::-webkit-scrollbar { display: none; }
-    .tab-btn { flex: 0 0 auto; padding: 10px 14px; text-align: center; border: none; background: none; font-weight: bold; font-size: 14px; color: #888; cursor: pointer; white-space: nowrap; }
+    /* แก้ไขแท็บเมนูให้แบ่ง 4 ช่องพอดีหน้าจอมือถือ ไม่ต้องเลื่อนหลบขวา */
+    .tabs-nav { display: flex; border-bottom: 2px solid #eee; margin-bottom: 15px; }
+    .tab-btn { flex: 1; padding: 10px 4px; text-align: center; border: none; background: none; font-weight: bold; font-size: 12px; color: #888; cursor: pointer; white-space: nowrap; }
     .tab-btn.active { color: #06C755; border-bottom: 3px solid #06C755; }
     
     .tab-content { display: none; }
@@ -35,12 +34,12 @@
 <body>
 
 <div class="container">
-  <!-- แถบเมนู 4 แท็บ -->
+  <!-- แถบเมนู 4 แท็บ (จัดเรียงใหม่ให้พอดีจอ ไม่ล้นขวา) -->
   <div class="tabs-nav">
     <button class="tab-btn active" onclick="switchTab('register')">ลงทะเบียน</button>
     <button class="tab-btn" onclick="switchTab('my-cars')">รถของฉัน</button>
-    <button class="tab-btn" onclick="switchTab('check-premium')">เช็คเบี้ยประกัน</button>
-    <button class="tab-btn" onclick="switchTab('my-policies')">กรมธรรม์ของฉัน</button>
+    <button class="tab-btn" onclick="switchTab('check-premium')">เช็คเบี้ย</button>
+    <button class="tab-btn" onclick="switchTab('my-policies')">กรมธรรม์</button>
   </div>
 
   <!-- Tab 1: ลงทะเบียน -->
@@ -111,6 +110,8 @@
   const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz_d5VvssBFwYBivSKTjvoh3t7sdM_J_9oXgsBHbGQVmhr-tPV6gKuCvF9Q7nOzpnMc/exec";
 
   let userLineProfile = null;
+  // เก็บอาเรย์ข้อมูลรถไว้ใช้งานแยกทะเบียนรถออกมาตรงๆ
+  let cachedCars = [];
 
   async function initLiff() {
     try {
@@ -186,17 +187,26 @@
     loadMyCars();
   });
 
-  // ส่งขอใบเสนอราคา
+  // ส่งขอใบเสนอราคา (ดึงทะเบียนรถ carReg ส่งไปตรงๆ)
   document.getElementById('quoteForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!await checkProfile()) return;
+
+    const selectedIndex = document.getElementById('quoteCarSelect').selectedIndex;
+    // index 0 คือ option ว่าง ดังนั้น index จริงใน cachedCars จะต้องลบ 1
+    const selectedCar = cachedCars[selectedIndex - 1];
+
+    if (!selectedCar) {
+      alert("กรุณาเลือกรถยนต์ก่อนส่งคำขอ");
+      return;
+    }
 
     const btn = document.getElementById('btnQuoteSubmit');
     btn.disabled = true;
 
     const payload = {
       action: "request_quote",
-      carInfo: document.getElementById('quoteCarSelect').value,
+      carReg: selectedCar.carReg, // ส่งเลขทะเบียนรถแยกเดี่ยวๆ ไปบันทึกใน Google Sheets
       coverageType: document.getElementById('coverageType').value,
       note: document.getElementById('quoteNote').value,
       lineUserId: userLineProfile.userId
@@ -220,6 +230,7 @@
       });
       const data = await res.json();
       if (data.status === "success" && data.cars.length > 0) {
+        cachedCars = data.cars;
         container.innerHTML = data.cars.map(c => `
           <div class="card">
             <h4>${c.carBrand}</h4>
@@ -247,8 +258,9 @@
       });
       const data = await res.json();
       if (data.status === "success" && data.cars.length > 0) {
+        cachedCars = data.cars;
         select.innerHTML = '<option value="">-- เลือกรถยนต์ --</option>' + 
-          data.cars.map(c => `<option value="${c.carBrand} (${c.carReg})">${c.carBrand} (${c.carReg})</option>`).join('');
+          data.cars.map(c => `<option value="${c.carReg}">${c.carBrand} (${c.carReg})</option>`).join('');
       } else {
         select.innerHTML = '<option value="">-- โปรดเพิ่มข้อมูลรถในแท็บ "รถของฉัน" ก่อน --</option>';
       }
@@ -272,7 +284,8 @@
       if (data.status === "success" && data.policies.length > 0) {
         container.innerHTML = data.policies.map(p => `
           <div class="card">
-            <h4>${p.carBrand} (${p.carReg})</h4>
+            <h4>${p.carBrand || 'รถยนต์'} (${p.carReg})</h4>
+            <p><strong>กรมธรรม์เลขที่:</strong> ${p.policyNo}</p>
             <p><strong>บริษัท:</strong> ${p.insuranceComp}</p>
             <p><strong>ประเภท:</strong> ${p.coverageType}</p>
             <p><strong>หมดอายุ:</strong> ${p.expiryDate}</p>
