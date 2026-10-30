@@ -332,31 +332,3 @@
 
 </body>
 </html>
-async function sendData(payload, successMsg) {
-    try {
-      const res = await fetch(GAS_WEB_APP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      });
-      
-      const responseText = await res.text();
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        console.error("Non-JSON Response:", responseText);
-        alert("ข้อผิดพลาดจากเซิร์ฟเวอร์: " + responseText);
-        return;
-      }
-
-      if (data.status === "success") {
-        alert(successMsg);
-      } else {
-        alert("แจ้งเตือนจากระบบ: " + data.message);
-      }
-    } catch (err) {
-      console.error("Fetch Error:", err);
-      alert("ไม่สามารถเชื่อมต่อกับระบบได้ กรุณาตรวจสอบอินเทอร์เน็ต: " + err.toString());
-    }
-  }
